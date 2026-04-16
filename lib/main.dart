@@ -16,14 +16,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Wikipedia Flutter'),
-        ),
-        body: const Center(
-          child: Text('Loading...'),
-        ),
-      ),
+      home: ArticleView(),
     );
   }
 }
@@ -38,5 +31,87 @@ class ArticleModel{
     }
 
     return Summary.fromJson(jsonDecode(response.body));
+  }
+}
+
+class ArticleViewModel extends ChangeNotifier{
+  final ArticleModel model;
+  Summary? summary;
+  String? errorMessage;
+  bool isLoading = false;
+
+  ArticleViewModel(this.model){
+    getRandomArticleSummary();
+  }
+
+  Future<void> getRandomArticleSummary() async{
+    isLoading = true;
+    notifyListeners();
+
+    try{
+      summary = await model.getRandomArticleSummary();
+      print('Article Loaded ${summary!.titles.normalized}');
+      errorMessage = null;
+    } on HttpException catch (error){
+      errorMessage = error.message;
+      print('Error Message ${error.message}');
+      summary = null;
+    }
+
+    isLoading = false;
+    notifyListeners();
+  }
+}
+
+class ArticleView extends StatelessWidget{
+  ArticleView({super.key});
+
+  final viewModel = ArticleViewModel(ArticleModel());
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Wikipedia flutter'),
+      ),
+      body: ListenableBuilder(
+        listenable: viewModel,
+        builder: (context, child) {
+          return switch((
+            viewModel.isLoading,
+            viewModel.summary,
+            viewModel.errorMessage
+          )){
+            (true, _, _) => CircularProgressIndicator(),
+            (false, _, String message) => Center(child: Text(message)),
+            (false, null, null) => Center(
+              child: Text('An unknown error has occurred'),
+            ),
+            // The summary must be non-null in this switch case.
+            (false, Summary summary, null) => ArticlePage(
+              summary: summary,
+              nextArticleCallback: viewModel.getRandomArticleSummary,
+            ),
+          };
+        },
+      ),
+    );
+  }
+}
+
+class ArticlePage extends StatelessWidget{
+  const ArticlePage({
+    super.key,
+    required this.summary,
+    required this.nextArticleCallback,
+  });
+
+  final Summary summary;
+  final VoidCallback nextArticleCallback;
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Center(child: Text('Article data here'));
   }
 }
