@@ -112,6 +112,50 @@ class ArticlePage extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
-    return Center(child: Text('Article data here'));
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          ArticleWidget(
+            summary: summary,
+          ),
+          ElevatedButton(onPressed: nextArticleCallback, child: Text("Next Random Article")),
+        ],
+      ),
+    );
+  }
+}
+
+class ArticleWidget extends StatelessWidget{
+  const ArticleWidget({super.key, required this.summary});
+  final Summary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        spacing: 10.0,
+        children: [
+          if(summary.hasImage)
+            Image.network(
+              summary.originalImage!.source
+            ),
+          Text(
+            summary.titles.normalized,
+            overflow: TextOverflow.ellipsis,
+            style: TextTheme.of(context).displaySmall,
+          ),
+          if(summary.description != null)
+            Text(
+              summary.description!,
+              overflow: TextOverflow.ellipsis,
+              style: TextTheme.of(context).bodySmall,
+            ),
+          Text(
+            summary.extract
+          ),
+        ],
+      ),
+    );
   }
 }
